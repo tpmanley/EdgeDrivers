@@ -1,0 +1,5 @@
+name: 'Govee'
+packageKey: 'govee'
+permissions:
+  lan: {}
+  discovery: {}

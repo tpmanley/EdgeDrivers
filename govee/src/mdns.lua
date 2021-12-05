@@ -43,6 +43,7 @@
 local mdns = {}
 
 local socket = require('socket')
+local log = require('log')
 
 
 local function mdns_make_query(service)
@@ -52,7 +53,8 @@ local function mdns_make_query(service)
     for n in service:gmatch('([^%.]+)') do
         data = data..string.char(#n)..n
     end
-    return data..string.char(0)..'\000\012'..'\000\001'
+    -- type = PTR (12), class = IN (0x0001), "QU" question (unicast response requested): True
+    return data..string.char(0)..'\000\012'..'\128\001'
 end
 
 
@@ -142,7 +144,15 @@ local function mdns_parse(service, data, answers)
             if (rdlength ~= 4) then
                 return nil, 'bad RDLENGTH with A record'
             end
-            answers.a[name] = string.format('%d.%d.%d.%d', data:byte(rdoffset + 0), data:byte(rdoffset + 1), data:byte(rdoffset + 2), data:byte(rdoffset + 3))
+            answers.a[name] = answers.a[name] or {}
+            table.insert(answers.a[name],
+                    string.format('%d.%d.%d.%d',
+                            data:byte(rdoffset + 0),
+                            data:byte(rdoffset + 1),
+                            data:byte(rdoffset + 2),
+                            data:byte(rdoffset + 3)
+                    )
+            )
         end
 
         -- PTR record (pointer)
@@ -171,7 +181,8 @@ local function mdns_parse(service, data, answers)
                     break
                 end
             end
-            answers.aaaa[name] = aaaa
+            answers.aaaa[name] = answers.aaaa[name] or {}
+            table.insert(answers.aaaa[name], aaaa)
         end
 
         -- SRV record (service location)
@@ -195,11 +206,11 @@ end
 
 --- Locate MDNS services in local network
 --
--- @param service   MDNS service name to search for (e.g. _ipps._tcp). A .local postfix will 
+-- @param service   MDNS service name to search for (e.g. _ipps._tcp). A .local postfix will
 --                  be appended if needed. If this parameter is not specified, all services
 --                  will be queried.
 --
--- @param timeout   Number of seconds to wait for MDNS responses. The default timeout is 2 
+-- @param timeout   Number of seconds to wait for MDNS responses. The default timeout is 2
 --                  seconds if this parameter is not specified.
 --
 -- @return          Table of MDNS services. Entry keys are service identifiers. Each entry
@@ -213,7 +224,7 @@ end
 --                      ipv6: IPv6 address
 --
 function mdns.query(service, timeout)
-
+    local status, msg
     -- browse all services if no service name specified
     local browse = false
     if (not service) then
@@ -231,12 +242,25 @@ function mdns.query(service, timeout)
 
     -- create IPv4 socket for multicast DNS
     local ip, port, udp = '224.0.0.251', 5353, socket.udp()
-    assert(udp:setsockname('*', 0))
-    assert(udp:setoption('ip-add-membership', { interface = '*', multiaddr = ip }))
-    assert(udp:settimeout(0.1))
+
+    status, msg = udp:setsockname('*', 0)
+    if status == nil then
+        log.warn("udp:setsockname returned error: " .. msg)
+    end
+    status, msg = udp:setoption('ip-add-membership', { interface = '0.0.0.0', multiaddr = ip })
+    if status == nil then
+        log.warn("udp:ip-add-membership returned error: " .. msg)
+    end
+    status, msg = udp:settimeout(1)
+    if status == nil then
+        log.warn("udp:settimeout returned error: " .. msg)
+    end
 
     -- send query
-    assert(udp:sendto(mdns_make_query(service), ip, port))
+    status, msg = udp:sendto(mdns_make_query(service), ip, port)
+    if status == nil then
+        log.warn("udp:sendto returned error: " .. msg)
+    end
 
     -- collect responses until timeout
     local answers = { srv = {}, a = {}, aaaa = {}, ptr = {} }
@@ -244,19 +268,22 @@ function mdns.query(service, timeout)
     while (os.time() - start < timeout) do
         local data, peeraddr, peerport = udp:receivefrom()
         if data and (peerport == port) then
-            mdns_parse(service, data, answers)
-            if (browse) then
+            status, msg = mdns_parse(service, data, answers)
+            if status == nil then
+                log.error("mdns_parse returned error: " .. msg)
+            elseif (browse) then
                 for _, ptr in ipairs(answers.ptr) do
-                    assert(udp:sendto(mdns_make_query(ptr), ip, port))
+                    status, msg = udp:sendto(mdns_make_query(ptr), ip, port)
+                    if status == nil then
+                        log.warn("udp:sendto returned error: " .. msg)
+                    end
                 end
                 answers.ptr = {}
             end
         end
     end
 
-    -- cleanup socket
-    assert(udp:setoption("ip-drop-membership", { interface = "*", multiaddr = ip }))
-    assert(udp:close())
+    udp:close()
     udp = nil
 
     -- extract target services from answers, resolve hostnames
@@ -267,10 +294,10 @@ function mdns.query(service, timeout)
             local name, svc = k:sub(1, pos - 1), k:sub(pos + 1)
             if (browse) or (svc == service) then
                 if (v.target) then
-                    if (answers.a[v.target]) then
+                    if (answers.a[v.target] and not v.ipv4) then
                         v.ipv4 = answers.a[v.target]
                     end
-                    if (answers.aaaa[v.target]) then
+                    if (answers.aaaa[v.target] and not v.ipv6) then
                         v.ipv6 = answers.aaaa[v.target]
                     end
                     if (v.target:sub(-6) == '.local') then
@@ -289,4 +316,3 @@ function mdns.query(service, timeout)
 end
 
 return mdns
-
