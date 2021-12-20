@@ -25,17 +25,18 @@ on/off lights, dimmable lights, RGB lights, and other RGBW lights.
    entered when registering a Govee account normally within minutes.
 
 ## HTTP Tunnel Setup
-This driver needs to talk to the Govee cloud but the Edge Driver platform
+This driver needs to talk to the Govee cloud, but the Edge Driver platform
 does not currently allow drivers to talk to the external internet. Therefore,
 it is necessary to run a proxy server on your local network. The driver
-will communicate with the proxy server and the server will talk to the
+will communicate with the proxy server, and the server will talk to the
 internet. The proxy server is acting as an [HTTP Tunnel](https://en.wikipedia.org/wiki/HTTP_tunnel).
-It is a fork of https://github.com/xnuter/http-tunnel with the addition
-of making it discoverable using mDNS so that you don't need to hardcode
-the IP address in the driver.
+The HTTP Tunnel and a mDNS responder have been packaged together using
+Docker to make it easy to set up. Note that this only works on Linux due
+to the `--net=host` part.
 
-1. `git clone https://github.com/tpmanley/http-tunnel`
-2. `cargo run -- --bind <local IP address>:8888 http`
+1. `git clone https://github.com/tpmanley/http-tunnel-server && cd http-tunnel-server`
+2. `docker image build -t httptunnel .`
+3. `docker run -d --net=host --rm --name httptunnel1 httptunnel`
    
 ## Driver Setup
 1. Clone this repository
