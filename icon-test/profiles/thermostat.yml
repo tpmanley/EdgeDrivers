@@ -1,0 +1,8 @@
+name: Thermostat
+components:
+- id: main
+  capabilities:
+  - id: switch
+    version: 1
+  categories:
+  - name: Thermostat

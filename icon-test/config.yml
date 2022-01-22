@@ -1,0 +1,5 @@
+name: 'Icon Test'
+packageKey: 'icon-test'
+permissions:
+  lan: {}
+  discovery: {}
