@@ -30,7 +30,7 @@ does not currently allow drivers to talk to the external internet. Therefore,
 it is necessary to run a proxy server on your local network. The driver
 will communicate with the proxy server, and the server will talk to the
 internet. The proxy server is acting as an [HTTP Tunnel](https://en.wikipedia.org/wiki/HTTP_tunnel).
-The HTTP Tunnel and a mDNS responder have been packaged together using
+The HTTP Tunnel and an mDNS responder have been packaged together using
 Docker to make it easy to set up. Note that this only works on Linux due
 to the `--net=host` part.
 
@@ -48,7 +48,7 @@ to the `--net=host` part.
 ## Running the Driver
 After the prior steps have been completed you can discover all your Govee
 devices by going to the SmartThings App, go to Add device, and Scan for
-nearby devices. If everything is working your a new device will be created
+nearby devices. If everything is working a new device will be created
 for each Govee device on your network.
 
 ## Known Bugs

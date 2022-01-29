@@ -2,7 +2,6 @@ local log = require('log')
 local json = require('dkjson')
 local http = require('httptunnel')
 local ltn12 = require('ltn12')
-local config = require('config')
 local url = require('socket.url')
 
 local goveeapi = {}
@@ -17,7 +16,7 @@ local function send_v1_request(driver, method, endpoint, json_body)
     url = "https://developer-api.govee.com/v1" .. endpoint,
     sink = ltn12.sink.table(response_body),
     headers = {
-      ['Govee-API-Key'] = config.API_KEY
+      ['Govee-API-Key'] = driver.datastore.api_key
     }
   }
   if json_body then

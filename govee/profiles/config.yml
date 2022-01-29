@@ -1,0 +1,20 @@
+name: config
+components:
+- id: main
+  capabilities:
+  - id: partyvoice23922.textfield
+    version: 1
+  categories:
+  - name: Bridges
+metadata:
+  mnmn: SmartThingsCommunity
+  vid: "62ea3d2e-aa57-30e5-ab3b-87f1fff71756"
+preferences:
+  - title: "API Key"
+    name: "apikey"
+    description: "In Govee Home app, go to My Profile -> About Us -> Apply for API Key"
+    required: true
+    preferenceType: string
+    definition:
+      stringType: text
+      default: ""

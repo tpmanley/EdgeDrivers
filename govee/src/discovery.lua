@@ -57,9 +57,8 @@ local function try_create_device(driver, dev)
     manufacturer = 'Govee',
     model = dev.model
   }
-  return driver:try_create_device(metadata)
+  driver:try_create_device(metadata)
 end
-
 
 local disco = {}
 
