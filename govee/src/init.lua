@@ -47,7 +47,7 @@ local driver =
 
 
 local function refresh_all(driver)
-    for i, device in ipairs(driver.get_devices()) do
+    for i, device in ipairs(driver:get_devices()) do
         commands.refresh(driver, device)
     end
 end
