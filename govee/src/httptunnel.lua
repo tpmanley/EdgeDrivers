@@ -1,8 +1,8 @@
-local socket = require("socket")
-local url    = require("socket.url")
-local ltn12  = require("ltn12")
-local http   = require("socket.http")
-
+local socket = require('socket')
+local ssl    = require('ssl')
+local ltn12  = require('ltn12')
+local http   = require('socket.http')
+local url    = require('socket.url')
 
 local try = socket.try
 local _M = {
@@ -74,8 +74,7 @@ local function tcp(params)
             if status ~= "HTTP/1.1 200 OK" then
                 return nil, "Connection to tunnel failed with status: " .. status
             end
-
-            self.sock = try(socket.st_ssl.wrap(self.sock, params))
+            self.sock = try(ssl.wrap(self.sock, params))
             self.sock:sni(host)
             self.sock:settimeout(_M.TIMEOUT)
             try(self.sock:dohandshake())
