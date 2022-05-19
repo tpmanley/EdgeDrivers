@@ -1,21 +1,12 @@
 local cosock = require('cosock')
-local socket = cosock.asyncify("socket")
-local ssl    = cosock.asyncify("ssl")
+local ssl    = cosock.asyncify("cosock.ssl")
 local ltn12  = require("ltn12")
 local http   = cosock.asyncify("socket.http")
 local url    = require("socket.url")
 local log = require "log"
 
 
-local try = function(...)
-    local args = {...}
-    if args[1] == nil then
-        log.error("Error trying", socket.skip(1, ...))
-        log.error(debug.traceback())
-        error(socket.skip(1, ...))
-    end
-    return ...
-end
+local try = cosock.socket.try
 local _M = {
     _VERSION   = "1.0.1",
     _COPYRIGHT = "LuaSec 1.0.1 - Copyright (C) 2009-2021 PUC-Rio",
@@ -69,7 +60,7 @@ local function tcp(params)
 
     return function()
         local conn = {}
-        conn.sock = try(socket.tcp())
+        conn.sock = try(cosock.socket.tcp())
         local timeout = getmetatable(conn.sock).__index.settimeout
         function conn:settimeout(...)
             return timeout(self.sock, _M.TIMEOUT)

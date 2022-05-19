@@ -69,7 +69,7 @@ end
 function goveeapi.get_device_list(driver)
   local status, response = send_v1_request(driver, 'GET', '/devices', nil)
   if status then
-    return true, response.data.devices
+    return true, response.data.devices or {}
   else
     return false, response
   end
