@@ -1,12 +1,10 @@
-local cosock = require('cosock')
-local ssl    = cosock.asyncify("cosock.ssl")
-local ltn12  = require("ltn12")
-local http   = cosock.asyncify("socket.http")
-local url    = require("socket.url")
-local log = require "log"
+local socket = require('socket')
+local ssl    = require('ssl')
+local ltn12  = require('ltn12')
+local http   = require('socket.http')
+local url    = require('socket.url')
 
-
-local try = cosock.socket.try
+local try = socket.try
 local _M = {
     _VERSION   = "1.0.1",
     _COPYRIGHT = "LuaSec 1.0.1 - Copyright (C) 2009-2021 PUC-Rio",
@@ -60,36 +58,27 @@ local function tcp(params)
 
     return function()
         local conn = {}
-        conn.sock = try(cosock.socket.tcp())
+        conn.sock = try(socket.tcp())
         local timeout = getmetatable(conn.sock).__index.settimeout
         function conn:settimeout(...)
             return timeout(self.sock, _M.TIMEOUT)
         end
         function conn:connect(host, port)
-            log.trace("calling connect")
             try(self.sock:connect(params.http_tunnel.host, params.http_tunnel.port))
-            log.trace("calling send")
             try(self.sock:send("CONNECT " .. host .. ":" .. port .. " HTTP/1.1\r\n"))
-            log.trace("calling send again")
             try(self.sock:send("Host: " .. host .. ":" .. port .. "\r\n"))
-            log.trace("calking final send")
             try(self.sock:send("\r\n\r\n"))
 
-            log.trace("calling recv")
             local status, err = self.sock:receive()
-            log.trace("recved", status, err)
             if err then return nil, err end
             if status ~= "HTTP/1.1 200 OK" then
                 return nil, "Connection to tunnel failed with status: " .. status
             end
-            log.trace("wrapping")
             self.sock = try(ssl.wrap(self.sock, params))
             self.sock:sni(host)
             self.sock:settimeout(_M.TIMEOUT)
-            log.trace("handshaking")
             try(self.sock:dohandshake())
             reg(self, getmetatable(self.sock))
-            log.trace("connected")
             return 1
         end
         return conn

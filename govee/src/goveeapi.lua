@@ -1,6 +1,7 @@
 local log = require('log')
 local json = require('dkjson')
-local http = require('httptunnel')
+local cosock = require('cosock')
+local http = cosock.asyncify('httptunnel')
 local ltn12 = require('ltn12')
 local url = require('socket.url')
 
