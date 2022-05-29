@@ -1,10 +1,8 @@
-local cosock = require('cosock')
-local socket = cosock.asyncify("socket")
-local ssl    = cosock.asyncify("ssl")
-local ltn12  = require("ltn12")
-local http   = cosock.asyncify("socket.http")
-local url    = require("socket.url")
-
+local socket = require('socket')
+local ssl    = require('ssl')
+local ltn12  = require('ltn12')
+local http   = require('socket.http')
+local url    = require('socket.url')
 
 local try = socket.try
 local _M = {
@@ -76,7 +74,6 @@ local function tcp(params)
             if status ~= "HTTP/1.1 200 OK" then
                 return nil, "Connection to tunnel failed with status: " .. status
             end
-
             self.sock = try(ssl.wrap(self.sock, params))
             self.sock:sni(host)
             self.sock:settimeout(_M.TIMEOUT)
