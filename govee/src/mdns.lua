@@ -42,7 +42,8 @@
 
 local mdns = {}
 
-local socket = require('socket')
+local cosock = require('cosock')
+local socket = cosock.asyncify('socket')
 local log = require('log')
 
 
