@@ -1,7 +1,7 @@
 local socket = require('socket')
 local ssl    = require('ssl')
 local ltn12  = require('ltn12')
-local http   = require('socket.http')
+local http   = require('myhttp')
 local url    = require('socket.url')
 
 local try = socket.try

@@ -26,9 +26,13 @@ local function send_v1_request(driver, method, endpoint, json_body)
     request.headers['Content-Length'] = string.len(json_body)
   end
 
-  local _, code = http.request(request)
+  local _, code, response_headers = http.request(request)
 
   response_body = table.concat(response_body)
+
+  log.debug(string.format("Response code: %s", code))
+  log.debug(string.format("response_headers: %s", response_headers))
+  log.debug(string.format("Response body: %s", response_body))
 
   if code == 200 then
     local obj, _pos, decode_err = json.decode(response_body)
