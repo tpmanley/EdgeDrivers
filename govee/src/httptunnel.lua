@@ -67,13 +67,18 @@ local function tcp(params)
             try(self.sock:connect(params.http_tunnel.host, params.http_tunnel.port))
             try(self.sock:send("CONNECT " .. host .. ":" .. port .. " HTTP/1.1\r\n"))
             try(self.sock:send("Host: " .. host .. ":" .. port .. "\r\n"))
-            try(self.sock:send("\r\n\r\n"))
+            try(self.sock:send("\r\n"))
 
             local status, err = self.sock:receive()
             if err then return nil, err end
             if status ~= "HTTP/1.1 200 OK" then
                 return nil, "Connection to tunnel failed with status: " .. status
             end
+            -- Consume remaining CONNECT response headers until the blank line
+            repeat
+                local line, lerr = self.sock:receive()
+                if lerr then return nil, lerr end
+            until line == "" or line == "\r"
             self.sock = try(ssl.wrap(self.sock, params))
             self.sock:sni(host)
             self.sock:settimeout(_M.TIMEOUT)
