@@ -6,6 +6,7 @@ local log = require('log')
 local discovery = require('discovery')
 local commands = require('commands')
 local capdefs = require('capabilitydefs')
+local tunnel = require('tunnel')
 
 
 local cap_textfield = caps.build_cap_from_json_string(capdefs.textField)
@@ -96,6 +97,7 @@ local driver =
 
 
 local function refresh_all(driver)
+    tunnel.refresh(driver)
     for i, device in ipairs(driver:get_devices()) do
         if device.device_network_id ~= CONFIG_DEVICE_NETWORK_ID then
             commands.refresh(driver, device)

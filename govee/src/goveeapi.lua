@@ -4,41 +4,51 @@ local cosock = require('cosock')
 local http = cosock.asyncify('httptunnel')
 local ltn12 = require('ltn12')
 local url = require('socket.url')
+local tunnel = require('tunnel')
 
 local goveeapi = {}
 
 local function send_v1_request(driver, method, endpoint, json_body)
   log.debug(string.format("Sending %s %s", method, endpoint))
 
-  local response_body = {}
-  local request = {
-    http_tunnel = driver.datastore.http_tunnel,
-    method = method,
-    url = "https://developer-api.govee.com/v1" .. endpoint,
-    sink = ltn12.sink.table(response_body),
-    headers = {
-      ['Govee-API-Key'] = driver.datastore.api_key
+  local function do_request()
+    local response_body = {}
+    local request = {
+      http_tunnel = driver.datastore.http_tunnel,
+      method = method,
+      url = "https://developer-api.govee.com/v1" .. endpoint,
+      sink = ltn12.sink.table(response_body),
+      headers = {
+        ['Govee-API-Key'] = driver.datastore.api_key
+      }
     }
-  }
-  if json_body then
-    request.source = ltn12.source.string(json_body)
-    request.headers['Content-Type'] = 'application/json'
-    request.headers['Content-Length'] = string.len(json_body)
+    if json_body then
+      request.source = ltn12.source.string(json_body)
+      request.headers['Content-Type'] = 'application/json'
+      request.headers['Content-Length'] = string.len(json_body)
+    end
+    local _, code = http.request(request)
+    return code, table.concat(response_body)
   end
 
-  local _, code = http.request(request)
+  local code, body = do_request()
 
-  response_body = table.concat(response_body)
+  if type(code) ~= 'number' then
+    log.warn("Network error contacting HTTP tunnel, attempting rediscovery: " .. tostring(code))
+    if tunnel.refresh(driver) then
+      code, body = do_request()
+    end
+  end
 
   if code == 200 then
-    local obj, _pos, decode_err = json.decode(response_body)
+    local obj, _pos, decode_err = json.decode(body)
     if obj then
       return true, obj
     else
       return false, decode_err
     end
   end
-  return false, "API call returned error status: " .. code .. ", Message:" .. response_body
+  return false, "API call returned error status: " .. tostring(code) .. ", Message:" .. body
 end
 
 

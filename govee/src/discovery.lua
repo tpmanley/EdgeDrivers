@@ -1,20 +1,6 @@
 local log = require('log')
 local goveeapi = require("goveeapi")
-local mdns = require('mdns')
-
-
-local function find_httptunnel_server()
-  local service = '_httptunnel._tcp'
-  local res = mdns.query(service)
-  if (res) then
-    for service_name, service_data in pairs(res) do
-      local ip, port = service_data.ipv4[1], service_data.port
-      return true, service_name, ip, port
-    end
-  end
-
-  return false, "Did not find " .. service
-end
+local tunnel = require('tunnel')
 
 
 local function get_profile(dev)
@@ -63,15 +49,10 @@ end
 local disco = {}
 
 function disco.start(driver, opts, cons)
-  log.info("Searching for HTTP Tunnel server")
-  local status, host, ip, port = find_httptunnel_server()
-  if not status then
+  if not tunnel.refresh(driver) then
     log.warn("Did not find the HTTP Tunnel server so skipping device discovery")
     return
   end
-
-  log.info(string.format("Found %s at %s:%s", host, ip, port))
-  driver.datastore.http_tunnel = { host = ip, port = port }
 
   log.info("Getting device list")
   local status, data = goveeapi.get_device_list(driver)
