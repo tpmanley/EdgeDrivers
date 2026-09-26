@@ -97,6 +97,8 @@ local driver =
 
 
 local function refresh_all(driver)
+    -- A failed lookup doesn't mean the tunnel is gone (mDNS answers can be lost),
+    -- so refresh anyway; a request that can't reach the tunnel marks the device offline.
     tunnel.refresh(driver)
     for i, device in ipairs(driver:get_devices()) do
         if device.device_network_id ~= CONFIG_DEVICE_NETWORK_ID then

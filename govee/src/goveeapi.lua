@@ -43,12 +43,12 @@ local function send_v1_request(driver, method, endpoint, json_body)
   if code == 200 then
     local obj, _pos, decode_err = json.decode(body)
     if obj then
-      return true, obj
+      return true, obj, code
     else
-      return false, decode_err
+      return false, decode_err, code
     end
   end
-  return false, "API call returned error status: " .. tostring(code) .. ", Message:" .. body
+  return false, "API call returned error status: " .. tostring(code) .. ", Message:" .. body, code
 end
 
 
@@ -69,11 +69,11 @@ function goveeapi.get_device_state(device)
   local query_params = string.format("device=%s&model=%s",
           url.escape(device.device_network_id),
           url.escape(device.model))
-  local status, response = send_v1_request(device.driver, 'GET', '/devices/state?' .. query_params, nil)
+  local status, response, code = send_v1_request(device.driver, 'GET', '/devices/state?' .. query_params, nil)
   if status then
-    return true, response.data
+    return true, response.data, code
   else
-    return false, response
+    return false, response, code
   end
 end
 
