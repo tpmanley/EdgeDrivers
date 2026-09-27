@@ -39,14 +39,12 @@ function command_handler.refresh(_, device)
       elseif prop.powerState == "on" then
         device:emit_event(caps.switch.switch.on())
       elseif prop.color then
-        local calc_r = 255 - prop.color.r
-        local calc_g = 255 - prop.color.g
-        local calc_b = 255 - prop.color.b
-        local hue, sta = utils.rgb_to_hsl(calc_r, calc_g, calc_b)
+        local hue, sta = utils.rgb_to_hsl(prop.color.r, prop.color.g, prop.color.b)
         device:emit_event(caps.colorControl.saturation(sta))
         device:emit_event(caps.colorControl.hue(hue))
-      elseif prop.colorTemp then
-        device:emit_event(caps.colorTemperature.colorTemperature(prop.colorTemp))
+      elseif prop.colorTem and prop.colorTem > 0 then
+        -- Govee may report 0 while the light is in color mode
+        device:emit_event(caps.colorTemperature.colorTemperature(prop.colorTem))
       end
     end
   elseif code == 429 then
